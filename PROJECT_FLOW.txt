@@ -1,0 +1,764 @@
+PROJECT FLOW NOTES
+AI VET BACKEND + BRILLIANT DIRECTORIES FRONTEND
+Pettinut
+
+==================================================
+1. PROJECT GOAL
+==================================================
+
+Build an AI Vet feature with:
+
+1. A Python FastAPI backend
+2. Gemini API integration using Google AI Studio API key
+3. One frontend page in Brilliant Directories
+4. A POST endpoint that accepts pet info and returns an AI-generated JSON report
+5. Public deployment so the BD website can call the backend
+
+Frontend page:
+https://pettinutservices.directoryup.com/vet-ai
+
+Backend deployed URL:
+https://pettinut-ai-vet.onrender.com
+
+API endpoint:
+https://pettinut-ai-vet.onrender.com/ai-vet
+
+Health check:
+https://pettinut-ai-vet.onrender.com/ping
+
+
+==================================================
+2. TECH STACK USED
+==================================================
+
+Backend:
+- Python
+- FastAPI
+- Uvicorn
+- google-genai
+- python-dotenv
+- Pydantic
+
+Frontend:
+- Brilliant Directories custom page
+- HTML
+- CSS
+- jQuery AJAX
+
+Deployment:
+- GitHub
+- Render
+
+
+==================================================
+3. PROJECT FILES
+==================================================
+
+Main files used in the project:
+
+1. main.py
+Purpose:
+- Creates FastAPI app
+- Reads GEMINI_API_KEY
+- Defines request schema
+- Adds endpoints
+- Calls Gemini API
+
+2. requirements.txt
+Purpose:
+- Lists Python dependencies for local install and Render deploy
+
+3. .env
+Purpose:
+- Stores secret Gemini API key locally
+
+4. .env.example
+Purpose:
+- Safe template file for GitHub
+
+5. .gitignore
+Purpose:
+- Prevents secret/local files from being pushed
+
+6. render.yaml
+Purpose:
+- Tells Render how to deploy the FastAPI app
+
+
+==================================================
+4. BACKEND FLOW
+==================================================
+
+Step 1:
+Create FastAPI app in main.py
+
+Used:
+- app = FastAPI()
+
+Step 2:
+Load environment variables
+
+Used:
+- from dotenv import load_dotenv
+- load_dotenv()
+- os.getenv("GEMINI_API_KEY")
+
+Step 3:
+Define request body model
+
+Used:
+class VetRequest(BaseModel):
+    pet_type: str
+    breed: str
+    age: str
+    weight: str
+    city: str
+    symptoms: str
+
+Step 4:
+Create health route
+
+Used:
+GET /ping
+
+Response:
+{"status": "ok"}
+
+Step 5:
+Create AI route
+
+Used:
+POST /ai-vet
+
+Input:
+- pet_type
+- breed
+- age
+- weight
+- city
+- symptoms
+
+Step 6:
+Build prompt using submitted pet data
+
+Step 7:
+Call Gemini API using google-genai
+
+Used:
+from google import genai
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=[{"role": "user", "parts": [{"text": prompt}]}],
+    config={"response_mime_type": "application/json"},
+)
+
+Step 8:
+Parse Gemini response as JSON
+
+Used:
+json.loads(response.text)
+
+Step 9:
+Return parsed JSON back to frontend
+
+Step 10:
+Handle bad/missing API key or invalid JSON with HTTPException
+
+
+==================================================
+5. FINAL BACKEND CODE FLOW SUMMARY
+==================================================
+
+Request comes from BD page
+-> BD sends POST request to /ai-vet
+-> FastAPI receives JSON
+-> Pydantic validates fields
+-> Prompt is created
+-> Gemini is called
+-> Gemini returns JSON text
+-> Backend converts text to JSON
+-> JSON is returned to frontend
+-> BD displays formatted report
+
+
+==================================================
+6. LOCAL SETUP COMMANDS USED
+==================================================
+
+Project folder:
+C:\gemini api project
+
+Create virtual environment:
+```powershell
+python -m venv venv
+```
+
+Activate virtual environment:
+```powershell
+.\venv\Scripts\activate
+```
+
+Install dependencies:
+```powershell
+pip install -r requirements.txt
+```
+
+Run FastAPI locally:
+```powershell
+uvicorn main:app --reload --port 8000
+```
+
+Test health endpoint:
+Open in browser:
+```text
+http://127.0.0.1:8000/ping
+```
+
+Expected response:
+```json
+{"status":"ok"}
+```
+
+
+==================================================
+7. REQUIREMENTS.TXT USED
+==================================================
+
+```txt
+fastapi
+uvicorn
+google-genai
+python-dotenv
+```
+
+
+==================================================
+8. .ENV FORMAT USED
+==================================================
+
+```env
+GEMINI_API_KEY=your_actual_key_here
+```
+
+Important:
+- `.env` is for local machine only
+- On Render, the key must be added in Render Environment Variables
+- `.env` must not be pushed to GitHub
+
+
+==================================================
+9. COMMON LOCAL ISSUES FACED
+==================================================
+
+Issue 1:
+Yellow import warnings in VS Code
+
+Cause:
+- VS Code using wrong Python interpreter
+
+Fix:
+- Select interpreter:
+  `C:\gemini api project\venv\Scripts\python.exe`
+
+Issue 2:
+Port 8000 already in use
+
+Error:
+- WinError 10013
+
+Cause:
+- Another Python/Uvicorn process already listening on port 8000
+
+Fix options:
+```powershell
+Stop-Process -Id <PID>
+```
+
+or run on another port:
+```powershell
+uvicorn main:app --reload --port 8001
+```
+
+Issue 3:
+`GEMINI_API_KEY is not set`
+
+Cause:
+- `.env` empty or server not restarted
+
+Fix:
+- Put key in `.env`
+- Restart Uvicorn
+
+
+==================================================
+10. FRONTEND FLOW IN BRILLIANT DIRECTORIES
+==================================================
+
+Brilliant Directories is only the frontend page.
+
+BD does NOT host the Python backend.
+
+BD page created:
+`/vet-ai`
+
+This page contains:
+1. HTML form
+2. Result area
+3. jQuery AJAX script
+4. CSS layout styling
+
+Form fields used:
+- pet_type
+- breed
+- age
+- weight
+- city
+- symptoms
+
+User action flow:
+1. User fills form
+2. Clicks Ask AI Vet
+3. jQuery collects field values
+4. Sends POST request to backend endpoint
+5. Backend returns JSON report
+6. Frontend formats and shows report
+
+
+==================================================
+11. IMPORTANT FRONTEND LESSON
+==================================================
+
+Wrong:
+Using BD page URL as API endpoint
+
+Example wrong URL:
+```text
+https://pettinutservices.directoryup.com/vet-ai
+```
+
+Why wrong:
+- This is a webpage
+- It returns HTML
+- AJAX expects JSON
+- Result becomes messy page source or "Not Found"
+
+Correct:
+Use deployed FastAPI endpoint
+
+Correct URL:
+```text
+https://pettinut-ai-vet.onrender.com/ai-vet
+```
+
+
+==================================================
+12. BRILLIANT DIRECTORIES AJAX FLOW
+==================================================
+
+Correct AJAX logic:
+
+1. Read form fields
+2. Build JSON payload
+3. POST to:
+   `https://pettinut-ai-vet.onrender.com/ai-vet`
+4. Receive JSON response
+5. Render clean report UI
+
+Main endpoint mapping:
+- BD page URL:
+  `https://pettinutservices.directoryup.com/vet-ai`
+- Backend API URL:
+  `https://pettinut-ai-vet.onrender.com/ai-vet`
+
+These are different URLs with different purposes.
+
+
+==================================================
+13. GITHUB PREPARATION FLOW
+==================================================
+
+Before deployment, prepare repo files.
+
+Created:
+- `.gitignore`
+- `.env.example`
+- `render.yaml`
+
+.gitignore used:
+```txt
+venv/
+__pycache__/
+*.pyc
+.env
+uvicorn.out.log
+uvicorn.err.log
+```
+
+.env.example used:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+
+==================================================
+14. RENDER CONFIG USED
+==================================================
+
+render.yaml used:
+```yaml
+services:
+  - type: web
+    name: pettinut-ai-vet
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+```
+
+Purpose:
+- Build Python service
+- Install requirements
+- Start FastAPI correctly on Render
+- Tell Render that GEMINI_API_KEY will be added manually
+
+
+==================================================
+15. GIT COMMANDS USED
+==================================================
+
+Initialize repo:
+```powershell
+git init
+```
+
+Add files:
+```powershell
+git add .
+```
+
+Commit:
+```powershell
+git commit -m "Initial FastAPI AI Vet API"
+```
+
+Rename branch:
+```powershell
+git branch -M main
+```
+
+Connect GitHub repo:
+```powershell
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+```
+
+Push code:
+```powershell
+git push -u origin main
+```
+
+If Git asks for identity, configure:
+```powershell
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+```
+
+
+==================================================
+16. GITHUB REPO CREATION FLOW
+==================================================
+
+When creating GitHub repo:
+- Repository name: ai-vet
+- Visibility: Public
+- Add README: Off
+- Add .gitignore: No .gitignore
+- Add license: No license
+
+Reason:
+- Local project already has `.gitignore`
+- Empty repo avoids first-push conflicts
+
+
+==================================================
+17. RENDER DEPLOYMENT FLOW
+==================================================
+
+Step 1:
+Push project to GitHub
+
+Step 2:
+Open Render dashboard
+
+Step 3:
+Choose New -> Blueprint
+
+Step 4:
+Connect GitHub repo
+
+Step 5:
+Render reads `render.yaml`
+
+Step 6:
+Set:
+- Blueprint name
+- Branch: main
+- Blueprint path: blank or render.yaml
+
+Step 7:
+Add environment variable:
+- Key: GEMINI_API_KEY
+- Value: your real Gemini key
+
+Step 8:
+Deploy service
+
+Step 9:
+Render creates service:
+`pettinut-ai-vet`
+
+Step 10:
+Render gives public URL:
+`https://pettinut-ai-vet.onrender.com`
+
+Step 11:
+Test:
+```text
+https://pettinut-ai-vet.onrender.com/ping
+```
+
+Expected:
+```json
+{"status":"ok"}
+```
+
+
+==================================================
+18. FINAL API URLS
+==================================================
+
+Health:
+```text
+https://pettinut-ai-vet.onrender.com/ping
+```
+
+AI endpoint:
+```text
+https://pettinut-ai-vet.onrender.com/ai-vet
+```
+
+
+==================================================
+19. COMMON DEPLOYMENT ISSUES
+==================================================
+
+Issue 1:
+`{"detail":"Not Found"}`
+
+Cause:
+- Wrong route URL
+- Using `/vet-ai` instead of `/ai-vet`
+
+Fix:
+Use:
+```text
+https://pettinut-ai-vet.onrender.com/ai-vet
+```
+
+Issue 2:
+Frontend shows HTML page instead of JSON
+
+Cause:
+- AJAX calling BD page URL instead of backend API URL
+
+Fix:
+Change AJAX `url` to deployed FastAPI endpoint
+
+Issue 3:
+Backend deploys but AI route fails
+
+Cause:
+- GEMINI_API_KEY not added in Render
+
+Fix:
+- Add secret in Render environment variables
+- Redeploy or restart service
+
+
+==================================================
+20. FINAL BRILLIANT DIRECTORIES FLOW
+==================================================
+
+1. User opens:
+   `https://pettinutservices.directoryup.com/vet-ai`
+
+2. User fills pet form
+
+3. User clicks:
+   Ask AI Vet
+
+4. jQuery sends:
+   POST `https://pettinut-ai-vet.onrender.com/ai-vet`
+
+5. Backend returns JSON report
+
+6. Frontend displays:
+- summary
+- possible causes
+- home care
+- urgency
+- when to see a vet
+- disclaimer
+
+7. User sees styled report on BD page
+
+
+==================================================
+21. FINAL END-TO-END FLOW
+==================================================
+
+Google AI Studio
+-> create Gemini API key
+
+Local project
+-> build FastAPI backend in main.py
+
+Local testing
+-> run uvicorn
+-> test /ping
+
+Frontend
+-> create BD page
+-> add form + AJAX + CSS
+
+GitHub
+-> push project code
+
+Render
+-> deploy backend publicly
+-> add GEMINI_API_KEY
+
+Production integration
+-> update BD AJAX URL to deployed endpoint
+
+Live usage
+-> users submit symptoms
+-> backend calls Gemini
+-> frontend displays AI Vet report
+
+
+==================================================
+22. COMMAND FLOW SUMMARY
+==================================================
+
+Local setup:
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+Git setup:
+```powershell
+git init
+git add .
+git commit -m "Initial FastAPI AI Vet API"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git push -u origin main
+```
+
+If Git identity missing:
+```powershell
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+```
+
+Optional stop old process:
+```powershell
+Stop-Process -Id <PID>
+```
+
+
+==================================================
+23. WHAT YOU SHOULD REUSE IN FUTURE PROJECTS
+==================================================
+
+For any similar AI tool project, follow this pattern:
+
+1. Define goal
+2. Create backend API
+3. Create request schema
+4. Add health route
+5. Add AI route
+6. Secure API key with env vars
+7. Test locally
+8. Build frontend page
+9. Connect frontend to backend
+10. Push code to GitHub
+11. Deploy backend publicly
+12. Add production env vars
+13. Update frontend to public endpoint
+14. Test live end-to-end
+
+
+==================================================
+24. SECURITY NOTES
+==================================================
+
+1. Never commit `.env`
+2. Keep API keys in env vars only
+3. Since the Gemini key was pasted openly, rotate it after setup
+4. Update the rotated key in:
+   - local `.env`
+   - Render environment variables
+
+
+==================================================
+25. FINAL RESULT
+==================================================
+
+Completed:
+- FastAPI backend created
+- Gemini integration added
+- Local testing done
+- GitHub deployment setup done
+- Render deployment config done
+- Public backend deployed
+- BD page connected
+- Frontend improved with styled layout
+
+Live backend:
+https://pettinut-ai-vet.onrender.com
+
+Live API endpoint:
+https://pettinut-ai-vet.onrender.com/ai-vet
+
+BD frontend page:
+https://pettinutservices.directoryup.com/vet-ai
+
+
+==================================================
+26. SHORT FUTURE CHECKLIST
+==================================================
+
+For next project, do this:
+
+1. Create project folder
+2. Create venv
+3. Install requirements
+4. Build backend
+5. Add `.env`
+6. Test locally
+7. Create `.gitignore`
+8. Push to GitHub
+9. Add `render.yaml`
+10. Deploy on Render
+11. Add env vars in Render
+12. Connect frontend
+13. Test with real data
+14. Polish UI
